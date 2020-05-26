@@ -15,7 +15,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/vvatanabe/go-typetalk-stream/stream"
-	"github.com/vvatanabe/go-typetalk-stream/stream/tool"
 )
 
 var (
@@ -96,20 +95,10 @@ func run(c *cobra.Command, args []string) {
 	// debug config
 	// fmt.Printf("config: %#v\n", config.Watch.Keywords)
 
-	var chain tool.Chain
-	chain.Use(isTargetSpace)
-	chain.Use(isPostMessage)
-	chain.Use(isNotMention)
-	chain.Use(isNotDM)
-	if config.Watch.IgnoreBot {
-		chain.Use(isNotBot)
-	}
-	chain.Use(containsKeyWord)
-
 	s := stream.Stream{
 		ClientID:     config.App.ClientID,
 		ClientSecret: config.App.ClientSecret,
-		Handler:      chain.Then(notify),
+		Handler:      stream.HandlerFunc(notify),
 		PingInterval: 30 * time.Second,
 		LoggerFunc:   log.Println,
 	}
@@ -142,62 +131,59 @@ func run(c *cobra.Command, args []string) {
 	}
 }
 
-func isTargetSpace(next stream.HandlerFunc) stream.HandlerFunc {
-	return stream.HandlerFunc(func(msg *stream.Message) {
-		for _, v := range config.Watch.SpaceKeys {
-			if v == msg.Data.Space.Key {
-				next.Serve(msg)
-				break
-			}
+func isTargetSpace(msg *stream.Message) bool {
+	for _, v := range config.Watch.SpaceKeys {
+		if msg.Data.Space != nil && v == msg.Data.Space.Key {
+			return true
 		}
-	})
+	}
+	return false
 }
 
-func isPostMessage(next stream.HandlerFunc) stream.HandlerFunc {
-	return stream.HandlerFunc(func(msg *stream.Message) {
-		if msg.Type == "postMessage" {
-			next.Serve(msg)
-		}
-	})
+func isPostMessage(msg *stream.Message) bool {
+	return msg.Type == "postMessage"
 }
 
-func isNotMention(next stream.HandlerFunc) stream.HandlerFunc {
-	return stream.HandlerFunc(func(msg *stream.Message) {
-		if !strings.Contains(msg.Data.Post.Message, config.Watch.Mention) {
-			next.Serve(msg)
-		}
-	})
+func isMention(msg *stream.Message) bool {
+	return strings.Contains(msg.Data.Post.Message, config.Watch.Mention)
 }
 
-func isNotDM(next stream.HandlerFunc) stream.HandlerFunc {
-	return stream.HandlerFunc(func(msg *stream.Message) {
-		if !msg.Data.DirectMessage {
-			next.Serve(msg)
-		}
-	})
+func isDM(msg *stream.Message) bool {
+	return msg.Data.DirectMessage != nil
 }
 
-func isNotBot(next stream.HandlerFunc) stream.HandlerFunc {
-	return stream.HandlerFunc(func(msg *stream.Message) {
-		if msg.Data.Post.Account.IsBot {
-			return
-		}
-		next.Serve(msg)
-	})
+func isBot(msg *stream.Message) bool {
+	return msg.Data.Post.Account.IsBot
 }
 
-func containsKeyWord(next stream.HandlerFunc) stream.HandlerFunc {
-	return stream.HandlerFunc(func(msg *stream.Message) {
-		for _, v := range config.Watch.Keywords {
-			if strings.Contains(msg.Data.Post.Message, v.Keyword) {
-				next.Serve(msg)
-				break
-			}
+func containsKeyWord(msg *stream.Message) bool {
+	for _, v := range config.Watch.Keywords {
+		if strings.Contains(msg.Data.Post.Message, v.Keyword) {
+			return true
 		}
-	})
+	}
+	return false
 }
 
 func notify(msg *stream.Message) {
+	if !isTargetSpace(msg) {
+		return
+	}
+	if !isPostMessage(msg) {
+		return
+	}
+	if isMention(msg) {
+		return
+	}
+	if isDM(msg) {
+		return
+	}
+	if config.Watch.IgnoreBot && isBot(msg) {
+		return
+	}
+	if !containsKeyWord(msg) {
+		return
+	}
 	if config.Message.DesktopNotify {
 		postURL := fmt.Sprintf(`https://typetalk.com/topics/%d/posts/%d`,
 			msg.Data.Topic.ID, msg.Data.Post.ID)

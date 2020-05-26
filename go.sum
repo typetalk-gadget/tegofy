@@ -201,8 +201,8 @@ github.com/tadvi/systray v0.0.0-20190226123456-11a2b8fa57af h1:6yITBqGTE2lEeTPG0
 github.com/tadvi/systray v0.0.0-20190226123456-11a2b8fa57af/go.mod h1:4F09kP5F+am0jAwlQLddpoMDM+iewkxxt6nxUQ5nq5o=
 github.com/tmc/grpc-websocket-proxy v0.0.0-20190109142713-0ad062ec5ee5/go.mod h1:ncp9v5uamzpCO7NfCPTXjqaC+bZgJeR0sMTm6dMHP7U=
 github.com/ugorji/go v1.1.4/go.mod h1:uQMGLiO92mf5W77hV/PUCpI3pbzQx3CRekS0kk+RGrc=
-github.com/vvatanabe/go-typetalk-stream v0.1.4 h1:vASw49X2pzUne/tTOQczzJBKutRaaYokSoPJ92s6AZY=
-github.com/vvatanabe/go-typetalk-stream v0.1.4/go.mod h1:NLO/KO7b7Cl0d2tFtC1YbG/j4CxLatdxkekoC4uqcGg=
+github.com/vvatanabe/go-typetalk-stream v0.1.5 h1:UZrCUTIMAlUqwpZ4w9Twwm8kQaZgbCxLsxcVgILh6vw=
+github.com/vvatanabe/go-typetalk-stream v0.1.5/go.mod h1:NLO/KO7b7Cl0d2tFtC1YbG/j4CxLatdxkekoC4uqcGg=
 github.com/xiang90/probing v0.0.0-20190116061207-43a291ad63a2/go.mod h1:UETIi67q53MR2AWcXfiuqkDkRtnGDLqkBTpCHuJHxtU=
 github.com/xordataexchange/crypt v0.0.3-0.20170626215501-b2862e3d0a77/go.mod h1:aYKd//L2LvnjZzWKhF00oedf4jCCReLcmhLdhm1A27Q=
 go.etcd.io/bbolt v1.3.2/go.mod h1:IbVyRI1SCnLcuJnV2u8VeU0CEYM7e686BmAb1XKL+uU=
