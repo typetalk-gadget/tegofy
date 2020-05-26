@@ -92,16 +92,21 @@ func main() {
 }
 
 func run(c *cobra.Command, args []string) {
-	fmt.Printf("config: %#v\n", config)
+
+	// debug config
+	// fmt.Printf("config: %#v\n", config.Watch.Keywords)
 
 	var chain tool.Chain
 	chain.Use(isTargetSpace)
 	chain.Use(isPostMessage)
 	chain.Use(isNotMention)
 	chain.Use(isNotDM)
-	chain.Use(isKeyWord)
+	if config.Watch.IgnoreBot {
+		chain.Use(isNotBot)
+	}
+	chain.Use(containsKeyWord)
 
-	stream := stream.Stream{
+	s := stream.Stream{
 		ClientID:     config.App.ClientID,
 		ClientSecret: config.App.ClientSecret,
 		Handler:      chain.Then(notify),
@@ -111,7 +116,7 @@ func run(c *cobra.Command, args []string) {
 
 	go func() {
 		log.Println("start to subscribe typetalk stream")
-		err := stream.Subscribe()
+		err := s.Subscribe()
 		//if err == stream.ErrStreamClosed {
 		//	return
 		//}
@@ -129,7 +134,7 @@ func run(c *cobra.Command, args []string) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
-	err := stream.Shutdown(ctx)
+	err := s.Shutdown(ctx)
 	if err != nil {
 		log.Println("failed to graceful shutdown", err)
 	} else {
@@ -172,18 +177,22 @@ func isNotDM(next stream.HandlerFunc) stream.HandlerFunc {
 	})
 }
 
-//func isNotBot(next stream.HandlerFunc) stream.HandlerFunc {
-//	return stream.HandlerFunc(func(msg *stream.Message) {
-//		if config.Watch.IgnoreBot && msg.Data.Post.Account.IsBot {
-//			next.Serve(msg)
-//		}
-//	})
-//}
-
-func isKeyWord(next stream.HandlerFunc) stream.HandlerFunc {
+func isNotBot(next stream.HandlerFunc) stream.HandlerFunc {
 	return stream.HandlerFunc(func(msg *stream.Message) {
-		if strings.Contains(msg.Data.Post.Message, os.Getenv("TARGET_KEYWORD")) {
-			next.Serve(msg)
+		if msg.Data.Post.Account.IsBot {
+			return
+		}
+		next.Serve(msg)
+	})
+}
+
+func containsKeyWord(next stream.HandlerFunc) stream.HandlerFunc {
+	return stream.HandlerFunc(func(msg *stream.Message) {
+		for _, v := range config.Watch.Keywords {
+			if strings.Contains(msg.Data.Post.Message, v.Keyword) {
+				next.Serve(msg)
+				break
+			}
 		}
 	})
 }
@@ -194,7 +203,7 @@ func notify(msg *stream.Message) {
 			msg.Data.Topic.ID, msg.Data.Post.ID)
 		beeep.Notify(
 			msg.Data.Topic.Name,
-			msg.Data.Post.Message+" => "+postURL,
+			postURL+" : "+msg.Data.Post.Message,
 			"")
 	}
 	if config.Message.TypetalkNotify {
