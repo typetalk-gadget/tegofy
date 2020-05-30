@@ -98,7 +98,7 @@ func run(c *cobra.Command, args []string) {
 	// fmt.Printf("config: %#v\n", config.Watch.Keywords)
 
 	scope := "topic.read"
-	if config.Message.DesktopNotify {
+	if config.Message.TypetalkNotify {
 		scope += " topic.post"
 	}
 
@@ -174,7 +174,12 @@ func isBot(msg *stream.Message) bool {
 func containsKeyWord(msg *stream.Message) bool {
 	for _, v := range config.Watch.Keywords {
 		if strings.Contains(msg.Data.Post.Message, v.Keyword) {
-			return true
+			if v.TopicID <= 0 {
+				return true
+			}
+			if v.TopicID == msg.Data.Topic.ID {
+				return true
+			}
 		}
 	}
 	return false
@@ -219,8 +224,6 @@ func notify(api *v1.Client) stream.Handler {
 			_, _, err := api.Messages.PostMessage(context.Background(), config.Message.NotifyTopicID, post, nil)
 			if err != nil {
 				log.Println("post message:", err)
-			} else {
-				log.Println("post message:", "done")
 			}
 		}
 	})

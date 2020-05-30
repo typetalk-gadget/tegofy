@@ -7,7 +7,7 @@ type App struct {
 
 type Keyword struct {
 	Keyword string `yaml:"keyword"`
-	Mention bool   `yaml:"mention"`
+	TopicID int    `yaml:"topicId"`
 }
 
 type Watch struct {
