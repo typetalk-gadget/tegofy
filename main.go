@@ -19,10 +19,9 @@ import (
 	"golang.org/x/oauth2"
 )
 
-var (
-	configFile string
-	envPrefix  string = "TEGOFY"
+const envPrefix = "TEGOFY"
 
+var (
 	config Config
 )
 
@@ -35,29 +34,34 @@ func main() {
 
 	flags := rootCmd.PersistentFlags()
 
-	flags.StringVarP(&configFile, "config", "c", "config.yml", "config file name")
+	flags.StringP("config", "c", "config.yml", "config file path")
 	flags.Bool("debug", false, "debug mode")
-	flags.String("clientId", "", "typetalk client id [TEGOFY_APP_CLIENTID]")
-	flags.String("clientSecret", "", "typetalk client secret [TEGOFY_APP_CLIENTSECRET]")
-	flags.StringSlice("keywords", nil, "matching keywords")
-	flags.String("mention", "", "ignore mention to you")
+	flags.String("clientId", "", "typetalk client id [TEGOFY_CLIENTID]")
+	flags.String("clientSecret", "", "typetalk client secret [TEGOFY_CLIENTSECRET]")
+	flags.Bool("notifyDesktop", false, "enable desktop notifications")
+	flags.Int("notifyTypetalk", 0, "enable typetalk notifications with topic id")
+	flags.Bool("withMention", false, "with mentions in notifications")
 	flags.StringSlice("spaceKeys", nil, "keys of space to include in search")
+	flags.StringSlice("keywords", nil, "matching keywords")
 	flags.Bool("ignoreBot", false, "ignore bot posts")
 	flags.StringSlice("ignoreUsers", nil, "ignore user posts")
-	flags.Bool("desktopNotify", false, "enable desktop notifications")
-	flags.Bool("typetalkNotify", true, "enable typetalk notifications")
 
 	_ = viper.BindPFlag("debug", flags.Lookup("debug"))
-	_ = viper.BindPFlag("app.clientId", flags.Lookup("clientId"))
-	_ = viper.BindPFlag("app.clientSecret", flags.Lookup("clientSecret"))
-	_ = viper.BindPFlag("watch.mention", flags.Lookup("mention"))
-	_ = viper.BindPFlag("watch.spaceKeys", flags.Lookup("spaceKeys"))
-	_ = viper.BindPFlag("watch.ignoreBot", flags.Lookup("ignoreBot"))
-	_ = viper.BindPFlag("watch.ignoreUsers", flags.Lookup("ignoreUsers"))
-	_ = viper.BindPFlag("message.desktopNotify", flags.Lookup("desktopNotify"))
-	_ = viper.BindPFlag("message.typetalkNotify", flags.Lookup("typetalkNotify"))
+	_ = viper.BindPFlag("clientId", flags.Lookup("clientId"))
+	_ = viper.BindPFlag("clientSecret", flags.Lookup("clientSecret"))
+	_ = viper.BindPFlag("notifyDesktop", flags.Lookup("notifyDesktop"))
+	_ = viper.BindPFlag("notifyTypetalk", flags.Lookup("notifyTypetalk"))
+	_ = viper.BindPFlag("withMention", flags.Lookup("withMention"))
+	_ = viper.BindPFlag("spaceKeys", flags.Lookup("spaceKeys"))
+	_ = viper.BindPFlag("ignoreBot", flags.Lookup("ignoreBot"))
+	_ = viper.BindPFlag("ignoreUsers", flags.Lookup("ignoreUsers"))
 
 	cobra.OnInitialize(func() {
+		configFile, err := flags.GetString("config")
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
 		viper.SetConfigFile(configFile)
 		viper.SetEnvPrefix(envPrefix)
 		viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_", "-", "_"))
@@ -78,9 +82,8 @@ func main() {
 		}
 
 		for _, v := range flagKeywords {
-			config.Watch.Keywords = append(config.Watch.Keywords, Keyword{
+			config.Keywords = append(config.Keywords, Keyword{
 				Keyword: v,
-				Mention: false,
 			})
 		}
 
@@ -92,25 +95,33 @@ func main() {
 	}
 }
 
+var myAccount *v1.Account
+
 func run(c *cobra.Command, args []string) {
 
 	// debug config
 	// fmt.Printf("config: %#v\n", config.Watch.Keywords)
 
-	scope := "topic.read"
-	if config.Message.TypetalkNotify {
+	scope := "my topic.read"
+	if config.NotifyTypetalk > 0 {
 		scope += " topic.post"
 	}
 
 	tokenSource := &source.TokenSource{
-		ClientID:     config.App.ClientID,
-		ClientSecret: config.App.ClientSecret,
+		ClientID:     config.ClientID,
+		ClientSecret: config.ClientSecret,
 		Scope:        scope,
 	}
 
 	tc := oauth2.NewClient(context.Background(), tokenSource)
 	api := v1.NewClient(tc)
 
+	myProfile, _, err := api.Accounts.GetMyProfile(context.Background())
+	if err != nil {
+		log.Println("failed to get my profile")
+		return
+	}
+	myAccount = myProfile.Account
 	s := stream.Stream{
 		TokenSource:  tokenSource,
 		Handler:      notify(api),
@@ -138,7 +149,7 @@ func run(c *cobra.Command, args []string) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
-	err := s.Shutdown(ctx)
+	err = s.Shutdown(ctx)
 	if err != nil {
 		log.Println("failed to graceful shutdown", err)
 	} else {
@@ -147,7 +158,7 @@ func run(c *cobra.Command, args []string) {
 }
 
 func isTargetSpace(msg *stream.Message) bool {
-	for _, v := range config.Watch.SpaceKeys {
+	for _, v := range config.SpaceKeys {
 		if msg.Data.Space != nil && v == msg.Data.Space.Key {
 			return true
 		}
@@ -160,11 +171,11 @@ func isPostMessage(msg *stream.Message) bool {
 }
 
 func isNotifyTopic(msg *stream.Message) bool {
-	return config.Message.NotifyTopicID > 0 && msg.Data.Topic.ID == config.Message.NotifyTopicID
+	return config.NotifyTypetalk > 0 && msg.Data.Topic.ID == config.NotifyTypetalk
 }
 
 func isMention(msg *stream.Message) bool {
-	return strings.Contains(msg.Data.Post.Message, config.Watch.Mention)
+	return strings.Contains(msg.Data.Post.Message, myAccount.Name)
 }
 
 func isDM(msg *stream.Message) bool {
@@ -172,21 +183,34 @@ func isDM(msg *stream.Message) bool {
 }
 
 func isBot(msg *stream.Message) bool {
-	return msg.Data.Post.Account.IsBot
+	return config.IgnoreBot && msg.Data.Post.Account.IsBot
 }
 
-func containsKeyWord(msg *stream.Message) bool {
-	for _, v := range config.Watch.Keywords {
+func isIgnoreUser(msg *stream.Message) bool {
+	var match bool
+	for _, name := range config.IgnoreUsers {
+		if msg.Data.Post.Account.Name == name {
+			match = true
+			break
+		}
+	}
+	return match
+}
+
+func containsKeyWords(msg *stream.Message) []string {
+	var matches []string
+	for _, v := range config.Keywords {
 		if strings.Contains(msg.Data.Post.Message, v.Keyword) {
 			if v.TopicID <= 0 {
-				return true
+				matches = append(matches, v.Keyword)
+				continue
 			}
 			if v.TopicID == msg.Data.Topic.ID {
-				return true
+				matches = append(matches, v.Keyword)
 			}
 		}
 	}
-	return false
+	return matches
 }
 
 func notify(api *v1.Client) stream.Handler {
@@ -194,10 +218,10 @@ func notify(api *v1.Client) stream.Handler {
 		if !isTargetSpace(msg) {
 			return
 		}
-		if isNotifyTopic(msg) {
+		if !isPostMessage(msg) {
 			return
 		}
-		if !isPostMessage(msg) {
+		if isNotifyTopic(msg) {
 			return
 		}
 		if isMention(msg) {
@@ -206,31 +230,44 @@ func notify(api *v1.Client) stream.Handler {
 		if isDM(msg) {
 			return
 		}
-		if config.Watch.IgnoreBot && isBot(msg) {
+		if isBot(msg) {
 			return
 		}
-		if !containsKeyWord(msg) {
+		if isIgnoreUser(msg) {
+			return
+		}
+		matches := containsKeyWords(msg)
+		if len(matches) == 0 {
 			return
 		}
 
 		postURL := fmt.Sprintf(`https://typetalk.com/topics/%d/posts/%d`,
 			msg.Data.Topic.ID, msg.Data.Post.ID)
 
-		if config.Message.DesktopNotify {
+		if config.NotifyDesktop {
+			var post strings.Builder
+			post.WriteString(postURL)
+			post.WriteString("\n")
+			post.WriteString(msg.Data.Post.Message)
 			beeep.Notify(
 				msg.Data.Topic.Name,
-				postURL+" : "+msg.Data.Post.Message,
+				post.String(),
 				"")
 		}
 
-		if config.Message.TypetalkNotify {
-			// TODO
-
-			post := fmt.Sprintf(`[post by tegofy]
-%s`, postURL)
-			_, _, err := api.Messages.PostMessage(context.Background(), config.Message.NotifyTopicID, post, nil)
+		if config.NotifyTypetalk > 0 {
+			var post strings.Builder
+			post.WriteString(postURL)
+			post.WriteString("\n")
+			post.WriteString(fmt.Sprintf("matches: %v", matches))
+			post.WriteString("\n")
+			if config.WithMention {
+				post.WriteString(fmt.Sprintf(`@%s by tegofy`, myAccount.Name))
+			}
+			_, _, err := api.Messages.PostMessage(context.Background(),
+				config.NotifyTypetalk, post.String(), nil)
 			if err != nil {
-				log.Println("post message:", err)
+				log.Println("failed to notify typetalk:", err)
 			}
 		}
 	})
