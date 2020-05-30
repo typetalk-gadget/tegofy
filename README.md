@@ -1,5 +1,7 @@
 # tegofy
 
+A command line tool for ego-search notify in Typetalk.
+
 ## Description
 
 ## Installation
@@ -8,12 +10,14 @@
 If you have the Go(go1.14+) installed, you can also install it with go get command.
 
 ```sh
-$ go get github.com/vvatanabe/tegofy
+$ go get github.com/typetalk-gadget/tegofy
 ```
 
 ## Usage
 
 ## Acknowledgments
+
+[futahashi](https://github.com/futahashi) for the core concept of tegofy
 
 ## Bugs and Feedback
 

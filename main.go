@@ -11,10 +11,12 @@ import (
 	"time"
 
 	"github.com/gen2brain/beeep"
-
+	v1 "github.com/nulab/go-typetalk/v3/typetalk/v1"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"github.com/vvatanabe/go-typetalk-stream/stream"
+	"github.com/typetalk-gadget/go-typetalk-stream/stream"
+	"github.com/typetalk-gadget/go-typetalk-token-source/source"
+	"golang.org/x/oauth2"
 )
 
 var (
@@ -95,10 +97,23 @@ func run(c *cobra.Command, args []string) {
 	// debug config
 	// fmt.Printf("config: %#v\n", config.Watch.Keywords)
 
-	s := stream.Stream{
+	scope := "topic.read"
+	if config.Message.DesktopNotify {
+		scope += " topic.post"
+	}
+
+	tokenSource := &source.TokenSource{
 		ClientID:     config.App.ClientID,
 		ClientSecret: config.App.ClientSecret,
-		Handler:      stream.HandlerFunc(notify),
+		Scope:        scope,
+	}
+
+	tc := oauth2.NewClient(context.Background(), tokenSource)
+	api := v1.NewClient(tc)
+
+	s := stream.Stream{
+		TokenSource:  tokenSource,
+		Handler:      notify(api),
 		PingInterval: 30 * time.Second,
 		LoggerFunc:   log.Println,
 	}
@@ -106,9 +121,9 @@ func run(c *cobra.Command, args []string) {
 	go func() {
 		log.Println("start to subscribe typetalk stream")
 		err := s.Subscribe()
-		//if err == stream.ErrStreamClosed {
-		//	return
-		//}
+		if err == stream.ErrStreamClosed {
+			return
+		}
 		if err != nil {
 			log.Println("failed to subscribe", err)
 		}
@@ -165,34 +180,48 @@ func containsKeyWord(msg *stream.Message) bool {
 	return false
 }
 
-func notify(msg *stream.Message) {
-	if !isTargetSpace(msg) {
-		return
-	}
-	if !isPostMessage(msg) {
-		return
-	}
-	if isMention(msg) {
-		return
-	}
-	if isDM(msg) {
-		return
-	}
-	if config.Watch.IgnoreBot && isBot(msg) {
-		return
-	}
-	if !containsKeyWord(msg) {
-		return
-	}
-	if config.Message.DesktopNotify {
+func notify(api *v1.Client) stream.Handler {
+	return stream.HandlerFunc(func(msg *stream.Message) {
+		if !isTargetSpace(msg) {
+			return
+		}
+		if !isPostMessage(msg) {
+			return
+		}
+		if isMention(msg) {
+			return
+		}
+		if isDM(msg) {
+			return
+		}
+		if config.Watch.IgnoreBot && isBot(msg) {
+			return
+		}
+		if !containsKeyWord(msg) {
+			return
+		}
+
 		postURL := fmt.Sprintf(`https://typetalk.com/topics/%d/posts/%d`,
 			msg.Data.Topic.ID, msg.Data.Post.ID)
-		beeep.Notify(
-			msg.Data.Topic.Name,
-			postURL+" : "+msg.Data.Post.Message,
-			"")
-	}
-	if config.Message.TypetalkNotify {
-		// TODO
-	}
+
+		if config.Message.DesktopNotify {
+			beeep.Notify(
+				msg.Data.Topic.Name,
+				postURL+" : "+msg.Data.Post.Message,
+				"")
+		}
+
+		if config.Message.TypetalkNotify {
+			// TODO
+
+			post := fmt.Sprintf(`[post by tegofy]
+%s`, postURL)
+			_, _, err := api.Messages.PostMessage(context.Background(), config.Message.NotifyTopicID, post, nil)
+			if err != nil {
+				log.Println("post message:", err)
+			} else {
+				log.Println("post message:", "done")
+			}
+		}
+	})
 }
