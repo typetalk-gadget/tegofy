@@ -159,6 +159,10 @@ func isPostMessage(msg *stream.Message) bool {
 	return msg.Type == "postMessage"
 }
 
+func isNotifyTopic(msg *stream.Message) bool {
+	return config.Message.NotifyTopicID > 0 && msg.Data.Topic.ID == config.Message.NotifyTopicID
+}
+
 func isMention(msg *stream.Message) bool {
 	return strings.Contains(msg.Data.Post.Message, config.Watch.Mention)
 }
@@ -188,6 +192,9 @@ func containsKeyWord(msg *stream.Message) bool {
 func notify(api *v1.Client) stream.Handler {
 	return stream.HandlerFunc(func(msg *stream.Message) {
 		if !isTargetSpace(msg) {
+			return
+		}
+		if isNotifyTopic(msg) {
 			return
 		}
 		if !isPostMessage(msg) {
