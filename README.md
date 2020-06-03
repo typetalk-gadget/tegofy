@@ -22,18 +22,40 @@ Usage:
   tegofy [flags]
 
 Flags:
-      --clientId string       typetalk client id [TEGOFY_CLIENTID]
-      --clientSecret string   typetalk client secret [TEGOFY_CLIENTSECRET]
-  -c, --config string         config file path (default "config.yml")
-      --debug                 debug mode
-  -h, --help                  help for tegofy
-      --ignoreBot             ignore bot posts
-      --ignoreUsers strings   ignore user posts
-      --keywords strings      matching keywords
-      --notifyDesktop         enable desktop notifications
-      --notifyTypetalk int    enable typetalk notifications with topic id
-      --spaceKeys strings     keys of space to include in search
-      --withMention           with mentions in notifications
+      --client-id string       typetalk client id [TEGOFY_CLIENT_ID]
+      --client-secret string   typetalk client secret [TEGOFY_CLIENT_SECRET]
+  -c, --config string          config file path (default "config.yml")
+      --debug                  debug mode
+  -h, --help                   help for tegofy
+      --ignore-bot             ignore bot posts
+      --ignore-users strings   ignore user posts
+      --keywords strings       matching keywords
+      --notify-desktop         enable desktop notifications
+      --notify-typetalk int    enable typetalk notifications with topic id
+      --space-keys strings     keys of space to include in search
+      --with-mention           with mentions in notifications
+```
+
+## Config File
+
+### YAML
+
+```yaml
+debug: true
+client_id: "deadbeef"
+client_secret: "deadcode"
+notify_dsesktop: true
+notify_typetalk: 9999999999999999
+with_mention: true
+space_keys:
+  - "your_space_key"
+keywords:
+  - keyword: "Hello"
+    topic_id: 11111111
+  - keyword: "bye"
+    topic_id: 22222222
+ignore_bot: false
+ignore_users: []
 ```
 
 ## Acknowledgments
