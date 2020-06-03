@@ -19,65 +19,100 @@ import (
 	"golang.org/x/oauth2"
 )
 
-const envPrefix = "TEGOFY"
+const cmdName = "tegofy"
 
 var (
-	config Config
+	envPrefix = strings.ToUpper(cmdName)
+	config    Config
 )
+
+const (
+	flagNameConfig         = "config"
+	flagNameDebug          = "debug"
+	flagNameClientID       = "client-id"
+	flagNameClientSecret   = "client-secret"
+	flagNameNotifyDesktop  = "notify-desktop"
+	flagNameNotifyTypetalk = "notify-typetalk"
+	flagNameWithMention    = "with-mention"
+	flagNameSpaceKeys      = "space-keys"
+	flagNameKeywords       = "keywords"
+	flagNameIgnoreBot      = "ignore-bot"
+	flagNameIgnoreUsers    = "ignore-users"
+)
+
+type Config struct {
+	Debug          bool          `mapstructure:"debug"`
+	ClientID       string        `mapstructure:"client_id"`
+	ClientSecret   string        `mapstructure:"client_secret"`
+	NotifyDesktop  bool          `mapstructure:"notify_desktop"`
+	NotifyTypetalk int           `mapstructure:"notify_typetalk"`
+	WithMention    bool          `mapstructure:"with_mention"`
+	SpaceKeys      []string      `mapstructure:"space_keys"`
+	Keywords       []Keyword     `mapstructure:"keywords"`
+	IgnoreBot      bool          `mapstructure:"ignore_bot"`
+	IgnoreUsers    []interface{} `mapstructure:"ignore_users"`
+}
+
+type Keyword struct {
+	Keyword string `mapstructure:"keyword"`
+	TopicID int    `mapstructure:"topic_id"`
+}
 
 func main() {
 
 	rootCmd := &cobra.Command{
-		Use: "tegofy",
+		Use: cmdName,
 		Run: run,
 	}
 
 	flags := rootCmd.PersistentFlags()
 
-	flags.StringP("config", "c", "config.yml", "config file path")
-	flags.Bool("debug", false, "debug mode")
-	flags.String("clientId", "", "typetalk client id [TEGOFY_CLIENTID]")
-	flags.String("clientSecret", "", "typetalk client secret [TEGOFY_CLIENTSECRET]")
-	flags.Bool("notifyDesktop", false, "enable desktop notifications")
-	flags.Int("notifyTypetalk", 0, "enable typetalk notifications with topic id")
-	flags.Bool("withMention", false, "with mentions in notifications")
-	flags.StringSlice("spaceKeys", nil, "keys of space to include in search")
-	flags.StringSlice("keywords", nil, "matching keywords")
-	flags.Bool("ignoreBot", false, "ignore bot posts")
-	flags.StringSlice("ignoreUsers", nil, "ignore user posts")
+	flags.StringP(flagNameConfig, "c", "config.yml", "config file path")
+	flags.Bool(flagNameDebug, false, "debug mode")
+	flags.String(flagNameClientID, "", "typetalk client id [TEGOFY_CLIENT_ID]")
+	flags.String(flagNameClientSecret, "", "typetalk client secret [TEGOFY_CLIENT_SECRET]")
+	flags.Bool(flagNameNotifyDesktop, false, "enable desktop notifications")
+	flags.Int(flagNameNotifyTypetalk, 0, "enable typetalk notifications with topic id")
+	flags.Bool(flagNameWithMention, false, "with mentions in notifications")
+	flags.StringSlice(flagNameSpaceKeys, nil, "keys of space to include in search")
+	flags.StringSlice(flagNameKeywords, nil, "matching keywords")
+	flags.Bool(flagNameIgnoreBot, false, "ignore bot posts")
+	flags.StringSlice(flagNameIgnoreUsers, nil, "ignore user posts")
 
-	_ = viper.BindPFlag("debug", flags.Lookup("debug"))
-	_ = viper.BindPFlag("clientId", flags.Lookup("clientId"))
-	_ = viper.BindPFlag("clientSecret", flags.Lookup("clientSecret"))
-	_ = viper.BindPFlag("notifyDesktop", flags.Lookup("notifyDesktop"))
-	_ = viper.BindPFlag("notifyTypetalk", flags.Lookup("notifyTypetalk"))
-	_ = viper.BindPFlag("withMention", flags.Lookup("withMention"))
-	_ = viper.BindPFlag("spaceKeys", flags.Lookup("spaceKeys"))
-	_ = viper.BindPFlag("ignoreBot", flags.Lookup("ignoreBot"))
-	_ = viper.BindPFlag("ignoreUsers", flags.Lookup("ignoreUsers"))
+	_ = viper.BindPFlag("debug", flags.Lookup(flagNameDebug))
+	_ = viper.BindPFlag("client_id", flags.Lookup(flagNameClientID))
+	_ = viper.BindPFlag("client_secret", flags.Lookup(flagNameClientSecret))
+	_ = viper.BindPFlag("notify_desktop", flags.Lookup(flagNameNotifyDesktop))
+	_ = viper.BindPFlag("notify_typetalk", flags.Lookup(flagNameNotifyTypetalk))
+	_ = viper.BindPFlag("with_mention", flags.Lookup(flagNameWithMention))
+	_ = viper.BindPFlag("space_keys", flags.Lookup(flagNameSpaceKeys))
+	_ = viper.BindPFlag("ignore_bot", flags.Lookup(flagNameIgnoreBot))
+	_ = viper.BindPFlag("ignore_users", flags.Lookup(flagNameIgnoreUsers))
 
 	cobra.OnInitialize(func() {
-		configFile, err := flags.GetString("config")
+		configFile, err := flags.GetString(flagNameConfig)
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}
 		viper.SetConfigFile(configFile)
+		viper.SetConfigType("yaml")
 		viper.SetEnvPrefix(envPrefix)
 		viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_", "-", "_"))
 		viper.AutomaticEnv()
 		if err := viper.ReadInConfig(); err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-		if err := viper.Unmarshal(&config); err != nil {
-			fmt.Println(err)
+			printError("failed to read config", err)
 			os.Exit(1)
 		}
 
-		flagKeywords, err := flags.GetStringSlice("keywords")
+		if err := viper.Unmarshal(&config); err != nil {
+			printError("failed to unmarshal config", err)
+			os.Exit(1)
+		}
+
+		flagKeywords, err := flags.GetStringSlice(flagNameKeywords)
 		if err != nil {
-			fmt.Println(err)
+			printError("failed to get keywords", err)
 			os.Exit(1)
 		}
 
@@ -100,7 +135,7 @@ var myAccount *v1.Account
 func run(c *cobra.Command, args []string) {
 
 	// debug config
-	// fmt.Printf("config: %#v\n", config.Watch.Keywords)
+	//fmt.Printf("config: %#v\n", config)
 
 	scope := "my topic.read"
 	if config.NotifyTypetalk > 0 {
@@ -118,7 +153,7 @@ func run(c *cobra.Command, args []string) {
 
 	myProfile, _, err := api.Accounts.GetMyProfile(context.Background())
 	if err != nil {
-		log.Println("failed to get my profile")
+		printError("failed to get my profile", err)
 		return
 	}
 	myAccount = myProfile.Account
@@ -130,13 +165,13 @@ func run(c *cobra.Command, args []string) {
 	}
 
 	go func() {
-		log.Println("start to subscribe typetalk stream")
+		printInfo("start to subscribe typetalk stream")
 		err := s.Subscribe()
 		if err == stream.ErrStreamClosed {
 			return
 		}
 		if err != nil {
-			log.Println("failed to subscribe", err)
+			printError("failed to subscribe", err)
 		}
 	}()
 
@@ -145,16 +180,16 @@ func run(c *cobra.Command, args []string) {
 
 	<-sigint
 
-	log.Println("received a signal of graceful shutdown")
+	printInfo("received a signal of graceful shutdown")
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
 	err = s.Shutdown(ctx)
 	if err != nil {
-		log.Println("failed to graceful shutdown", err)
-	} else {
-		log.Println("completed graceful shutdown")
+		printError("failed to graceful shutdown", err)
+		return
 	}
+	printInfo("completed graceful shutdown")
 }
 
 func isTargetSpace(msg *stream.Message) bool {
@@ -267,8 +302,18 @@ func notify(api *v1.Client) stream.Handler {
 			_, _, err := api.Messages.PostMessage(context.Background(),
 				config.NotifyTypetalk, post.String(), nil)
 			if err != nil {
-				log.Println("failed to notify typetalk:", err)
+				printError("failed to notify typetalk:", err)
 			}
 		}
 	})
+}
+
+func printInfo(args ...interface{}) {
+	args = append([]interface{}{cmdName + ":", "[INFO]"}, args...)
+	log.Println(args...)
+}
+
+func printError(args ...interface{}) {
+	args = append([]interface{}{cmdName + ":", "[ERROR]"}, args...)
+	log.Println(args...)
 }
