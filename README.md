@@ -44,7 +44,7 @@ Flags:
 debug: true
 client_id: "deadbeef"
 client_secret: "deadcode"
-notify_dsesktop: true
+notify_desktop: true
 notify_typetalk: 9999999999999999
 with_mention: true
 space_keys:

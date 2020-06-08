@@ -135,7 +135,7 @@ var myAccount *v1.Account
 func run(c *cobra.Command, args []string) {
 
 	// debug config
-	//fmt.Printf("config: %#v\n", config)
+	// fmt.Printf("config: %#v\n", config)
 
 	scope := "my topic.read"
 	if config.NotifyTypetalk > 0 {
