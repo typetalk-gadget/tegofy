@@ -22,18 +22,19 @@ Usage:
   tegofy [flags]
 
 Flags:
-      --client-id string       typetalk client id [TEGOFY_CLIENT_ID]
-      --client-secret string   typetalk client secret [TEGOFY_CLIENT_SECRET]
+      --client_id string       typetalk client id [TEGOFY_CLIENT_ID]
+      --client_secret string   typetalk client secret [TEGOFY_CLIENT_SECRET]
   -c, --config string          config file path (default "config.yml")
       --debug                  debug mode
   -h, --help                   help for tegofy
-      --ignore-bot             ignore bot posts
-      --ignore-users strings   ignore user posts
-      --keywords strings       matching keywords
-      --notify-desktop         enable desktop notifications
-      --notify-typetalk int    enable typetalk notifications with topic id
-      --space-keys strings     keys of space to include in search
-      --with-mention           with mentions in notifications
+      --ignore_bot             ignore bot posts [TEGOFY_IGNORE_BOT]
+      --ignore_users strings   ignore user posts [TEGOFY_IGNORE_USERS]
+      --keywords strings       matching keywords [TEGOFY_KEYWORDS]
+      --notify_desktop         enable desktop notifications [TEGOFY_NOTIFY_DESKTOP]
+      --notify_typetalk int    enable typetalk notifications with topic id [TEGOFY_NOTIFY_TYPETALK]
+      --space_keys strings     keys of space to include in search [TEGOFY_SPACE_KEYS]
+      --with_mention           with mentions in notifications[TEGOFY_WITH_MENTION]
+
 ```
 
 ## Config File

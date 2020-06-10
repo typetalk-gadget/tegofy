@@ -29,15 +29,15 @@ var (
 const (
 	flagNameConfig         = "config"
 	flagNameDebug          = "debug"
-	flagNameClientID       = "client-id"
-	flagNameClientSecret   = "client-secret"
-	flagNameNotifyDesktop  = "notify-desktop"
-	flagNameNotifyTypetalk = "notify-typetalk"
-	flagNameWithMention    = "with-mention"
-	flagNameSpaceKeys      = "space-keys"
+	flagNameClientID       = "client_id"
+	flagNameClientSecret   = "client_secret"
+	flagNameNotifyDesktop  = "notify_desktop"
+	flagNameNotifyTypetalk = "notify_typetalk"
+	flagNameWithMention    = "with_mention"
+	flagNameSpaceKeys      = "space_keys"
 	flagNameKeywords       = "keywords"
-	flagNameIgnoreBot      = "ignore-bot"
-	flagNameIgnoreUsers    = "ignore-users"
+	flagNameIgnoreBot      = "ignore_bot"
+	flagNameIgnoreUsers    = "ignore_users"
 )
 
 type Config struct {
@@ -71,23 +71,23 @@ func main() {
 	flags.Bool(flagNameDebug, false, "debug mode")
 	flags.String(flagNameClientID, "", "typetalk client id [TEGOFY_CLIENT_ID]")
 	flags.String(flagNameClientSecret, "", "typetalk client secret [TEGOFY_CLIENT_SECRET]")
-	flags.Bool(flagNameNotifyDesktop, false, "enable desktop notifications")
-	flags.Int(flagNameNotifyTypetalk, 0, "enable typetalk notifications with topic id")
-	flags.Bool(flagNameWithMention, false, "with mentions in notifications")
-	flags.StringSlice(flagNameSpaceKeys, nil, "keys of space to include in search")
-	flags.StringSlice(flagNameKeywords, nil, "matching keywords")
-	flags.Bool(flagNameIgnoreBot, false, "ignore bot posts")
-	flags.StringSlice(flagNameIgnoreUsers, nil, "ignore user posts")
+	flags.Bool(flagNameNotifyDesktop, false, "enable desktop notifications [TEGOFY_NOTIFY_DESKTOP]")
+	flags.Int(flagNameNotifyTypetalk, 0, "enable typetalk notifications with topic id [TEGOFY_NOTIFY_TYPETALK]")
+	flags.Bool(flagNameWithMention, false, "with mentions in notifications[TEGOFY_WITH_MENTION]")
+	flags.StringSlice(flagNameSpaceKeys, nil, "keys of space to include in search [TEGOFY_SPACE_KEYS]")
+	flags.StringSlice(flagNameKeywords, nil, "matching keywords [TEGOFY_KEYWORDS]")
+	flags.Bool(flagNameIgnoreBot, false, "ignore bot posts [TEGOFY_IGNORE_BOT]")
+	flags.StringSlice(flagNameIgnoreUsers, nil, "ignore user posts [TEGOFY_IGNORE_USERS]")
 
-	_ = viper.BindPFlag("debug", flags.Lookup(flagNameDebug))
-	_ = viper.BindPFlag("client_id", flags.Lookup(flagNameClientID))
-	_ = viper.BindPFlag("client_secret", flags.Lookup(flagNameClientSecret))
-	_ = viper.BindPFlag("notify_desktop", flags.Lookup(flagNameNotifyDesktop))
-	_ = viper.BindPFlag("notify_typetalk", flags.Lookup(flagNameNotifyTypetalk))
-	_ = viper.BindPFlag("with_mention", flags.Lookup(flagNameWithMention))
-	_ = viper.BindPFlag("space_keys", flags.Lookup(flagNameSpaceKeys))
-	_ = viper.BindPFlag("ignore_bot", flags.Lookup(flagNameIgnoreBot))
-	_ = viper.BindPFlag("ignore_users", flags.Lookup(flagNameIgnoreUsers))
+	_ = viper.BindPFlag(flagNameDebug, flags.Lookup(flagNameDebug))
+	_ = viper.BindPFlag(flagNameClientID, flags.Lookup(flagNameClientID))
+	_ = viper.BindPFlag(flagNameClientSecret, flags.Lookup(flagNameClientSecret))
+	_ = viper.BindPFlag(flagNameNotifyDesktop, flags.Lookup(flagNameNotifyDesktop))
+	_ = viper.BindPFlag(flagNameNotifyTypetalk, flags.Lookup(flagNameNotifyTypetalk))
+	_ = viper.BindPFlag(flagNameWithMention, flags.Lookup(flagNameWithMention))
+	_ = viper.BindPFlag(flagNameSpaceKeys, flags.Lookup(flagNameSpaceKeys))
+	_ = viper.BindPFlag(flagNameIgnoreBot, flags.Lookup(flagNameIgnoreBot))
+	_ = viper.BindPFlag(flagNameIgnoreUsers, flags.Lookup(flagNameIgnoreUsers))
 
 	cobra.OnInitialize(func() {
 		configFile, err := flags.GetString(flagNameConfig)
