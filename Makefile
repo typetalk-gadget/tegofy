@@ -47,7 +47,7 @@ CREDITS: deps devel-deps go.sum
 .PHONY: crossbuild
 crossbuild: devel-deps
 	godzil crossbuild -pv=v$(VERSION) -build-ldflags=$(BUILD_LDFLAGS) \
-	  -d=./dist/v$(VERSION) ./...
+	  -d=./dist/v$(VERSION) .
 
 .PHONY: upload
 upload:
