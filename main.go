@@ -237,7 +237,7 @@ func isIgnoreUser(msg *stream.Message) bool {
 func containsKeyWords(msg *stream.Message) []string {
 	var matches []string
 	for _, v := range config.Keywords {
-		if strings.Contains(msg.Data.Post.Message, v.Keyword) {
+		if len(v.Keyword) > 0 && strings.Contains(msg.Data.Post.Message, v.Keyword) {
 			if v.TopicID <= 0 {
 				matches = append(matches, v.Keyword)
 				continue
