@@ -61,8 +61,9 @@ type Keyword struct {
 func main() {
 
 	rootCmd := &cobra.Command{
-		Use: cmdName,
-		Run: run,
+		Use:     cmdName,
+		Run:     run,
+		Version: FmtVersion(),
 	}
 
 	flags := rootCmd.PersistentFlags()
@@ -134,8 +135,9 @@ var myAccount *v1.Account
 
 func run(c *cobra.Command, args []string) {
 
-	// debug config
-	// fmt.Printf("config: %#v\n", config)
+	if config.Debug {
+		printDebug(fmt.Sprintf("config: %#v\n", config))
+	}
 
 	scope := "my topic.read"
 	if config.NotifyTypetalk > 0 {
@@ -306,6 +308,11 @@ func notify(api *v1.Client) stream.Handler {
 			}
 		}
 	})
+}
+
+func printDebug(args ...interface{}) {
+	args = append([]interface{}{cmdName + ":", "[DEBUG]"}, args...)
+	log.Println(args...)
 }
 
 func printInfo(args ...interface{}) {

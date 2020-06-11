@@ -33,6 +33,7 @@ Flags:
       --notify_desktop         enable desktop notifications [TEGOFY_NOTIFY_DESKTOP]
       --notify_typetalk int    enable typetalk notifications with topic id [TEGOFY_NOTIFY_TYPETALK]
       --space_keys strings     keys of space to include in search [TEGOFY_SPACE_KEYS]
+      -v, --version            version for tegofy
       --with_mention           with mentions in notifications[TEGOFY_WITH_MENTION]
 
 ```
