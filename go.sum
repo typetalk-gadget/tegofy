@@ -148,8 +148,8 @@ github.com/nu7hatch/gouuid v0.0.0-20131221200532-179d4d0c4d8d h1:VhgPp6v9qf9Agr/
 github.com/nu7hatch/gouuid v0.0.0-20131221200532-179d4d0c4d8d/go.mod h1:YUTz3bUH2ZwIWBy3CJBeOBEugqcmXREj14T+iG/4k4U=
 github.com/nulab/go-typetalk v2.1.1+incompatible h1:XdLjQuNVh77Wp7Qu4w8fqFdptxozGyy+Cq7n7/uUvMw=
 github.com/nulab/go-typetalk v2.1.1+incompatible/go.mod h1:m2ResEyH1dMB+0oMK/iCwd/qzCdCT+WdncQILJo/7t4=
-github.com/nulab/go-typetalk/v3 v3.0.0 h1:Dz4H/Lwpl4Q7baU4lDKUkqIc43WflrolvMySmKSZwQQ=
-github.com/nulab/go-typetalk/v3 v3.0.0/go.mod h1:OYbqY/fLYT5Mhq8iiBCaVEEg/78tfK+TiEiComppGrU=
+github.com/nulab/go-typetalk/v3 v3.2.0 h1:xW2izd00CmCzCcj5HvlUzWlfgrwA5/lO9Shyejkj8gI=
+github.com/nulab/go-typetalk/v3 v3.2.0/go.mod h1:OYbqY/fLYT5Mhq8iiBCaVEEg/78tfK+TiEiComppGrU=
 github.com/oklog/ulid v1.3.1/go.mod h1:CirwcVhetQ6Lv90oh/F+FBtV6XMibvdAFo93nm5qn4U=
 github.com/pascaldekloe/goe v0.0.0-20180627143212-57f6aae5913c/go.mod h1:lzWF7FIEvWOWxwDKqyGYQf6ZUaNfKdP144TG7ZOy1lc=
 github.com/pelletier/go-toml v1.2.0 h1:T5zMGML61Wp+FlcbWjRDT7yAxhJNAiPPLOFECq181zc=
